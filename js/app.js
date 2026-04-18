@@ -1,5 +1,9 @@
 console.log('🔥 FOTOJUT READY');
 
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) 
+  || window.innerWidth < 768;
+console.log('Device:', isMobile ? '📱 Mobile' : '💻 Desktop');
+
 const video = document.getElementById('video');
 const startBtn = document.getElementById('startMulti');
 const downloadBtn = document.getElementById('downloadBtn');
@@ -24,7 +28,11 @@ function addPreview(img) {
 (async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 1280, height: 720 }
+      video: {
+  facingMode: "user",
+  width: { ideal: 1280 },
+  height: { ideal: 720 }
+}
     });
     video.srcObject = stream;
     await video.play();
@@ -100,24 +108,29 @@ async function capturePhoto() {
     return;
   }
 
-  const displayRatio = video.clientWidth / video.clientHeight;
-  const videoRatio = vw / vh;
+  const c = document.createElement('canvas');
+  const cctx = c.getContext('2d');
 
   let sx = 0, sy = 0, sw = vw, sh = vh;
 
-  if (videoRatio > displayRatio) {
-    sw = vh * displayRatio;
-    sx = (vw - sw) / 2;
-  } else {
-    sh = vw / displayRatio;
-    sy = (vh - sh) / 2;
+  if (!isMobile) {
+    // 💻 DESKTOP → crop biar sama preview
+    const displayRatio = video.clientWidth / video.clientHeight;
+    const videoRatio = vw / vh;
+
+    if (videoRatio > displayRatio) {
+      sw = vh * displayRatio;
+      sx = (vw - sw) / 2;
+    } else {
+      sh = vw / displayRatio;
+      sy = (vh - sh) / 2;
+    }
   }
 
-  const c = document.createElement('canvas');
+  // 📱 MOBILE → full frame (NO ZOOM)
   c.width = sw;
   c.height = sh;
 
-  const cctx = c.getContext('2d');
   cctx.translate(sw, 0);
   cctx.scale(-1, 1);
   cctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
